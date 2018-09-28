@@ -9,100 +9,37 @@ program ising
 		real(8) :: sigma_M, sigma_E, sigma_X, sigma_C !thermodynamics std
 
 		integer, allocatable :: lattice(:,:)
-
 		integer :: i, s, len !counters
+
+		character(len=20) :: string_N
+
 		
+		read(*,*) string_N
+		read(string_N,*) N
+
+		string_N = trim('metropolis'//trim(string_N)//'.txt')
+		open(1, file=string_N)
+
 		B = 0.
 		J = 1.
-		N = 16
 		n_ther = 10000
-		n_int  = 1000000
+		n_int  = 500000
 		E = 0d0
 		M = 0d0
 		T = 1
 		r = 2
 
-		open(1, file='metropolis.txt')
-
 		allocate(lattice(N,N))
 		call create_lattice(N, lattice)
 		do i=1, 30
 			call thermalization(N, B, J, T, lattice, n_ther)
-			!call metropolis(N, B, J, T, lattice, n_int, E, M, C, X, Bin, sigma_E, sigma_M, sigma_C, sigma_X)
-			!write(1,*) E, M, C, X, Bin, sigma_E, sigma_M, sigma_C, sigma_X, T
-			call correlation_lenght(N, T, B, J, lattice, r, N_int,  chi)
-			write(1,*) chi, T
+			call metropolis(N, B, J, T, lattice, n_int, E, M, C, X, Bin, sigma_E, sigma_M, sigma_C, sigma_X)
+			write(1,*) E, M, C, X, Bin, sigma_E, sigma_M, sigma_C, sigma_X, T
+			write(*,*)  T
 			T = T + 0.1d0
 		enddo
 	
 	contains 
-
-
-	subroutine correlation_lenght(N, T, B, J, lattice,  r, N_int,  chi)
-		implicit none
-
-		real(8), intent(in) :: B, J, T
-		integer, intent(in) :: N, r
-		integer, intent(in) :: N_int
-		integer, dimension(N,N), intent(inout) :: lattice
-
-		real(8), intent(out) :: chi
-
-		real(8) :: delta_E, sis, sisj
-		integer :: i, k, w ! counters 
-		integer :: si, sj
-
-		real :: rand ! random number
-		integer :: up, down, left, right
-
-
-		chi = 0.
-		sis = 0.
-		sisj = 0.
-		 
-
-		do i=1,N_int
-			call random_number(rand)
-			si =  1 + floor(N*rand)
-			call random_number(rand)
-			sj =  1 + floor(N*rand)
-			if (si == 1) then
-      			left = lattice(N-r,sj)
-      			right = lattice(1+r,sj)
-   			else if (si == N) then
-      			left = lattice(N-r,sj)
-      			right = lattice(r,sj)
-   			else
-      			left = lattice(si-r,sj)
-      			right = lattice(si+r,sj)
-   			end if
-			if (sj == 1) then
-				up = lattice(si,1+r)
-				down = lattice(si,N-r)
-			else if (sj == N) then
-				up = lattice(si,r)
-				down = lattice(si,N-r)
-			else
-				up = lattice(si,sj+r)
-				down = lattice(si,sj-r)
-			end if
-
-			delta_E = 2d0*lattice(si, sj)*(up + down + left + right)
-			call random_number(rand)	
-			if( rand < exp(-delta_E/T) ) then
-				lattice(si, sj) = -lattice(si, sj)
-			endif
-			
-			sisj = sisj + lattice(si,sj)*(up + down + left + right)/4d0
-			sis = sis + lattice(si, sj)
-			
-		enddo
-	
-		sisj = sisj/N_int
-		sis = sis/N_int
-		chi = abs(sisj - sis**2.)
-
-	end subroutine correlation_lenght
 
 	subroutine metropolis(N, B, J, T, lattice, n_int, E, M, C, X, Bin, sigma_E, sigma_M, sigma_C, sigma_X)
 		implicit none
@@ -113,7 +50,6 @@ program ising
 
 		real(8), intent(out) :: M, E, X, C, Bin    !thermodynamics variables
 		real(8), intent(out):: sigma_M, sigma_E, sigma_X, sigma_C !thermodynamics std
-
 		
 		integer :: i, k
 		integer :: left, right, up, down
@@ -199,7 +135,7 @@ program ising
 		X2 = X2/n_int
 		C = C/n_int
 		C2 = C2/n_int
-		Bin = 1. - Bin/M2/M2/3.
+		Bin = 1d0 - Bin/M2/M2/3d0
 
 		sigma_E = sqrt((E2 - E*E)/N_int)
 		sigma_M = sqrt((M2 - M*M)/N_int)
@@ -299,7 +235,6 @@ program ising
 		
 
 	end subroutine thermalization
-	
 
 	subroutine create_lattice(N, lattice)
 		implicit none
@@ -322,5 +257,71 @@ program ising
 		enddo
 
 	end subroutine create_lattice
+
+	subroutine correlation_lenght(N, T, B, J, lattice,  r, N_int,  chi)
+		implicit none
+
+		real(8), intent(in) :: B, J, T
+		integer, intent(in) :: N, r
+		integer, intent(in) :: N_int
+		integer, dimension(N,N), intent(inout) :: lattice
+
+		real(8), intent(out) :: chi
+
+		real(8) :: delta_E, sis, sisj
+		integer :: i, k, w ! counters 
+		integer :: si, sj
+
+		real :: rand ! random number
+		integer :: up, down, left, right
+
+		chi = 0.
+		sis = 0.
+		sisj = 0.
+
+		do i=1,N_int
+			call random_number(rand)
+			si =  1 + floor(N*rand)
+			call random_number(rand)
+			sj =  1 + floor(N*rand)
+			if (si == 1) then
+      			left = lattice(N-r,sj)
+      			right = lattice(1+r,sj)
+   			else if (si == N) then
+      			left = lattice(N-r,sj)
+      			right = lattice(r,sj)
+   			else
+      			left = lattice(si-r,sj)
+      			right = lattice(si+r,sj)
+   			end if
+			if (sj == 1) then
+				up = lattice(si,1+r)
+				down = lattice(si,N-r)
+			else if (sj == N) then
+				up = lattice(si,r)
+				down = lattice(si,N-r)
+			else
+				up = lattice(si,sj+r)
+				down = lattice(si,sj-r)
+			end if
+
+			delta_E = 2d0*lattice(si, sj)*(up + down + left + right)
+			call random_number(rand)	
+			if( rand < exp(-delta_E/T) ) then
+				lattice(si, sj) = -lattice(si, sj)
+			endif
+			
+			sisj = sisj + lattice(si,sj)*(up + down + left + right)/4d0
+			sis = sis + lattice(si, sj)
+			
+		enddo
+	
+		sisj = sisj/N_int
+		sis = sis/N_int
+		chi = abs(sisj - sis**2.)
+
+	end subroutine correlation_lenght
+
+
 
 end program ising
