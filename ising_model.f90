@@ -14,6 +14,7 @@ program ising
 		character(len=20) :: string_N
 
 		
+		write(*,*) "Inpute lattice width"
 		read(*,*) string_N
 		read(string_N,*) N
 
@@ -131,9 +132,9 @@ program ising
 		E2 = E2/n_int
 		M = M/n_int
 		M2 = M2/n_int
-		X = X/n_int
+		X = N2*X/n_int
 		X2 = X2/n_int
-		C = C/n_int
+		C = N2*C/n_int
 		C2 = C2/n_int
 		Bin = 1d0 - Bin/M2/M2/3d0
 
