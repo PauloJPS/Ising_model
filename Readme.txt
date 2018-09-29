@@ -6,10 +6,11 @@ Fortran 90 code
 Implemented functions:
 Energy per spin
 Magnetization per spin
-
-Doing:
 Specific heat
 magnetic susceptibility
+
+
+Doing:
 correlation fuction
 optimize energy 
 
